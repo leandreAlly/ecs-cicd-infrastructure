@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  ECS CI/CD - container registry and the CI identity that writes to it.
+  A private ECR repository with immutable tags, plus the IAM role the
+  application repository's GitHub Actions workflow assumes through OIDC.
+  Deployed before the platform stack because an ECS service cannot start
+  without an image already present.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ecs-cicd
+    AllowedPattern: '[a-z][a-z0-9-]*'
+
+  RepositoryName:
+    Type: String
+    Default: ecs-cicd-app
+    AllowedPattern: '[a-z0-9][a-z0-9._/-]*'
+
+  GitHubOwner:
+    Type: String
+    Default: leandreAlly
+  GitHubRepo:
+    Type: String
+    Default: ecs-cicd-app
+
+  RoleName:
+    Type: String
+    Default: ecs-cicd-github-ecr-push
+
+  CreateOidcProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      IAM allows one OIDC provider per URL per account. Set to 'false' only if
+      another stack in this account already creates the GitHub provider.
+
+  MaxImages:
+    Type: Number
+    Default: 10
+    MinValue: 1
+    MaxValue: 1000
+
+  UntaggedImageExpiryDays:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 365
+
+Conditions:
+  ShouldCreateOidcProvider: !Equals [!Ref CreateOidcProvider, 'true']
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: ShouldCreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+      Tags:
+        - Key: Name
+          Value: github-actions-oidc
+        - Key: project
+          Value: !Ref ProjectName
+
+  EcrRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      ImageTagMutability: IMMUTABLE
+      EmptyOnDelete: true
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Expire untagged images after ${UntaggedImageExpiryDays} day(s)",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": ${UntaggedImageExpiryDays}
+                },
+                "action": { "type": "expire" }
+              },
+              {
+                "rulePriority": 2,
+                "description": "Keep only the ${MaxImages} most recent images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": ${MaxImages}
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: !Ref RepositoryName
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: layer
+          Value: registry
+        - Key: managed-by
+          Value: cloudformation-gitsync
+
+  GitHubActionsEcrRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      Description: !Sub 'Lets GitHub Actions in ${GitHubOwner}/${GitHubRepo} push images to ${RepositoryName}'
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - ShouldCreateOidcProvider
+                - !Ref GitHubOidcProvider
+                - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}/${GitHubRepo}:*'
+      Policies:
+        - PolicyName: EcrPush
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AuthenticateToRegistry
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: PushToProjectRepositoryOnly
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:DescribeImages
+                Resource: !Sub 'arn:${AWS::Partition}:ecr:${AWS::Region}:${AWS::AccountId}:repository/${RepositoryName}'
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: managed-by
+          Value: cloudformation-gitsync
+
+Outputs:
+  RepositoryName:
+    Value: !Ref EcrRepository
+    Export:
+      Name: !Sub '${ProjectName}-EcrRepositoryName'
+  RepositoryUri:
+    Value: !GetAtt EcrRepository.RepositoryUri
+    Export:
+      Name: !Sub '${ProjectName}-EcrRepositoryUri'
+  RepositoryArn:
+    Value: !GetAtt EcrRepository.Arn
+    Export:
+      Name: !Sub '${ProjectName}-EcrRepositoryArn'
+  GitHubActionsRoleArn:
+    Description: Value for the AWS_ECR_ROLE_ARN secret in the application repository
+    Value: !GetAtt GitHubActionsEcrRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-GitHubActionsRoleArn'

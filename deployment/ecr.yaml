@@ -1,0 +1,11 @@
+template-file-path: cloudformation/02-ecr.yaml
+parameters:
+  ProjectName: ecs-cicd
+  RepositoryName: ecs-cicd-app
+  GitHubOwner: leandreAlly
+  GitHubRepo: ecs-cicd-app
+  CreateOidcProvider: 'true'
+tags:
+  project: ecs-cicd
+  layer: registry
+  managed-by: cloudformation-gitsync
