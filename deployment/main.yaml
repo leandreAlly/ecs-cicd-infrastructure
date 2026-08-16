@@ -1,0 +1,10 @@
+template-file-path: packaged/main.yaml
+parameters:
+  ProjectName: ecs-cicd
+  S3PrefixListId: pl-c3aa4faa
+  GitHubOwner: leandreAlly
+  ApplicationRepo: ecs-cicd-app
+  RepositoryName: ecs-cicd-app
+tags:
+  project: ecs-cicd
+  managed-by: cloudformation-gitsync
