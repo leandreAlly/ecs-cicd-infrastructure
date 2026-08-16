@@ -62,6 +62,33 @@ Parameters:
     Type: String
     Default: ecs-cicd-app
 
+  ImageTag:
+    Type: String
+    Default: ''
+    Description: >
+      Image tag to run. Leave empty on the first deploy - the platform module
+      is only created once an image exists in the registry, because an ECS
+      service cannot start without a real image to pull.
+
+  TaskCpu:
+    Type: String
+    Default: '256'
+  TaskMemory:
+    Type: String
+    Default: '512'
+  MinCapacity:
+    Type: Number
+    Default: 1
+  MaxCapacity:
+    Type: Number
+    Default: 4
+  CpuTargetUtilization:
+    Type: Number
+    Default: 60
+
+Conditions:
+  HasImage: !Not [!Equals [!Ref ImageTag, '']]
+
 Resources:
   Network:
     Type: AWS::CloudFormation::Stack
@@ -96,7 +123,53 @@ Resources:
         - Key: module
           Value: registry
 
+  Platform:
+    Type: AWS::CloudFormation::Stack
+    Condition: HasImage
+    Properties:
+      TemplateURL: modules/platform.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        VpcId: !GetAtt Network.Outputs.VpcId
+        PublicSubnetIds: !GetAtt Network.Outputs.PublicSubnetIds
+        PrivateSubnetIds: !GetAtt Network.Outputs.PrivateSubnetIds
+        AlbSecurityGroupId: !GetAtt Network.Outputs.AlbSecurityGroupId
+        TaskSecurityGroupId: !GetAtt Network.Outputs.TaskSecurityGroupId
+        ContainerImage: !Sub '${Registry.Outputs.RepositoryUri}:${ImageTag}'
+        ContainerPort: !Ref ContainerPort
+        TestListenerPort: !Ref TestListenerPort
+        TaskCpu: !Ref TaskCpu
+        TaskMemory: !Ref TaskMemory
+        MinCapacity: !Ref MinCapacity
+        MaxCapacity: !Ref MaxCapacity
+        CpuTargetUtilization: !Ref CpuTargetUtilization
+      Tags:
+        - Key: module
+          Value: platform
+
 Outputs:
+  ApplicationUrl:
+    Condition: HasImage
+    Description: Public ALB endpoint - the lab deliverable
+    Value: !GetAtt Platform.Outputs.LoadBalancerUrl
+  ClusterName:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.ClusterName
+  ServiceName:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.ServiceName
+  BlueTargetGroupName:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.BlueTargetGroupName
+  GreenTargetGroupName:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.GreenTargetGroupName
+  ProductionListenerArn:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.ProductionListenerArn
+  TestListenerArn:
+    Condition: HasImage
+    Value: !GetAtt Platform.Outputs.TestListenerArn
   VpcId:
     Description: VPC created by the network module
     Value: !GetAtt Network.Outputs.VpcId
