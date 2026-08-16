@@ -31,10 +31,15 @@ jobs:
           cfn-lint templates/bootstrap.yaml templates/modules/*.yaml
           cfn-lint templates/main.yaml --ignore-checks W3002
 
+      - name: Show what this run will authenticate as
+        run: |
+          echo "role:     ${{ vars.AWS_PACKAGE_ROLE_ARN }}"
+          echo "expected sub: repo:${{ github.repository }}:ref:${{ github.ref }}"
+
       - name: Assume the packaging role
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_PACKAGE_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_PACKAGE_ROLE_ARN }}
           role-session-name: gha-package-${{ github.run_id }}
           aws-region: ${{ vars.AWS_REGION }}
 
