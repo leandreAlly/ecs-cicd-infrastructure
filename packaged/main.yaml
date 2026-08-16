@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: "ECS CI/CD - root stack. Nests every module for this project. Child templates\
+  \ are referenced by local path here; \"aws cloudformation package\" rewrites each\
+  \ TemplateURL to a content-hashed S3 object, so a module only updates when its own\
+  \ template changes. Deploy this stack, never its children.\n"
+Parameters:
+  ProjectName:
+    Type: String
+    Default: ecs-cicd
+    AllowedPattern: '[a-z][a-z0-9-]*'
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.0.0.0/24
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.0.1.0/24
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 10.0.10.0/24
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 10.0.11.0/24
+  ContainerPort:
+    Type: Number
+    Default: 8080
+  TestListenerPort:
+    Type: Number
+    Default: 9000
+  TestListenerCidr:
+    Type: String
+    Default: 0.0.0.0/0
+  S3PrefixListId:
+    Type: String
+    AllowedPattern: ^pl-[0-9a-f]+$
+  GitHubOwner:
+    Type: String
+    Default: leandreAlly
+  ApplicationRepo:
+    Type: String
+    Default: ecs-cicd-app
+  GitHubOwnerId:
+    Type: String
+    Default: '78492995'
+    AllowedPattern: '[0-9]+'
+    Description: "Numeric GitHub owner ID. Repositories created after 2026-07-15 emit\
+      \ an immutable OIDC subject claim of the form repo:owner@ownerid/repo@repoid:ref:...\
+      \ instead of repo:owner/repo:ref:...\n"
+  RepositoryName:
+    Type: String
+    Default: ecs-cicd-app
+Resources:
+  Network:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/b256ad78b7f0f164f5f05339fb411bf7.template
+      Parameters:
+        ProjectName:
+          Ref: ProjectName
+        VpcCidr:
+          Ref: VpcCidr
+        PublicSubnet1Cidr:
+          Ref: PublicSubnet1Cidr
+        PublicSubnet2Cidr:
+          Ref: PublicSubnet2Cidr
+        PrivateSubnet1Cidr:
+          Ref: PrivateSubnet1Cidr
+        PrivateSubnet2Cidr:
+          Ref: PrivateSubnet2Cidr
+        ContainerPort:
+          Ref: ContainerPort
+        TestListenerPort:
+          Ref: TestListenerPort
+        TestListenerCidr:
+          Ref: TestListenerCidr
+        S3PrefixListId:
+          Ref: S3PrefixListId
+      Tags:
+      - Key: module
+        Value: network
+  Registry:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/5a53a2ef5fafba960c06d91110623ced.template
+      Parameters:
+        ProjectName:
+          Ref: ProjectName
+        RepositoryName:
+          Ref: RepositoryName
+        GitHubOwner:
+          Ref: GitHubOwner
+        GitHubOwnerId:
+          Ref: GitHubOwnerId
+        GitHubRepo:
+          Ref: ApplicationRepo
+      Tags:
+      - Key: module
+        Value: registry
+Outputs:
+  VpcId:
+    Description: VPC created by the network module
+    Value:
+      Fn::GetAtt:
+      - Network
+      - Outputs.VpcId
+  PrivateSubnetIds:
+    Value:
+      Fn::GetAtt:
+      - Network
+      - Outputs.PrivateSubnetIds
+  PublicSubnetIds:
+    Value:
+      Fn::GetAtt:
+      - Network
+      - Outputs.PublicSubnetIds
+  AlbSecurityGroupId:
+    Value:
+      Fn::GetAtt:
+      - Network
+      - Outputs.AlbSecurityGroupId
+  TaskSecurityGroupId:
+    Value:
+      Fn::GetAtt:
+      - Network
+      - Outputs.TaskSecurityGroupId
+  RepositoryUri:
+    Description: Image URI the application workflow pushes to
+    Value:
+      Fn::GetAtt:
+      - Registry
+      - Outputs.RepositoryUri
+  RepositoryName:
+    Value:
+      Fn::GetAtt:
+      - Registry
+      - Outputs.RepositoryName
+  ApplicationRoleArn:
+    Description: Value for AWS_ECR_ROLE_ARN in the application repository
+    Value:
+      Fn::GetAtt:
+      - Registry
+      - Outputs.GitHubActionsRoleArn
