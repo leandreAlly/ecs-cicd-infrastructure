@@ -4,6 +4,7 @@ parameters:
   S3PrefixListId: pl-c3aa4faa
   GitHubOwner: leandreAlly
   ApplicationRepo: ecs-cicd-app
+  GitHubOwnerId: '78492995'
   RepositoryName: ecs-cicd-app
 tags:
   project: ecs-cicd

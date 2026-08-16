@@ -24,6 +24,15 @@ Parameters:
     Type: String
     Default: ecs-cicd-app
 
+  GitHubOwnerId:
+    Type: String
+    Default: '78492995'
+    AllowedPattern: '[0-9]+'
+    Description: >
+      Numeric GitHub owner ID. Repositories created after 2026-07-15 emit an
+      immutable OIDC subject claim of the form
+      repo:owner@ownerid/repo@repoid:ref:... instead of repo:owner/repo:ref:...
+
   MaxImages:
     Type: Number
     Default: 10
@@ -100,7 +109,9 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}/${GitHubRepo}:*'
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubOwner}/${GitHubRepo}:*'
+                  - !Sub 'repo:${GitHubOwner}@${GitHubOwnerId}/${GitHubRepo}@*'
       Policies:
         - PolicyName: EcrPush
           PolicyDocument:

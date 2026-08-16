@@ -19,6 +19,15 @@ Parameters:
     Type: String
     Default: ecs-cicd-infrastructure
 
+  GitHubOwnerId:
+    Type: String
+    Default: '78492995'
+    AllowedPattern: '[0-9]+'
+    Description: >
+      Numeric GitHub owner ID. Repositories created after 2026-07-15 emit an
+      immutable OIDC subject claim of the form
+      repo:owner@ownerid/repo@repoid:ref:... instead of repo:owner/repo:ref:...
+
   CreateOidcProvider:
     Type: String
     Default: 'true'
@@ -124,7 +133,9 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
               StringLike:
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubOwner}/${InfrastructureRepo}:*'
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubOwner}/${InfrastructureRepo}:*'
+                  - !Sub 'repo:${GitHubOwner}@${GitHubOwnerId}/${InfrastructureRepo}@*'
       Policies:
         - PolicyName: PackageTemplates
           PolicyDocument:

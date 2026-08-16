@@ -49,6 +49,15 @@ Parameters:
     Type: String
     Default: ecs-cicd-app
 
+  GitHubOwnerId:
+    Type: String
+    Default: '78492995'
+    AllowedPattern: '[0-9]+'
+    Description: >
+      Numeric GitHub owner ID. Repositories created after 2026-07-15 emit an
+      immutable OIDC subject claim of the form
+      repo:owner@ownerid/repo@repoid:ref:... instead of repo:owner/repo:ref:...
+
   RepositoryName:
     Type: String
     Default: ecs-cicd-app
@@ -81,6 +90,7 @@ Resources:
         ProjectName: !Ref ProjectName
         RepositoryName: !Ref RepositoryName
         GitHubOwner: !Ref GitHubOwner
+        GitHubOwnerId: !Ref GitHubOwnerId
         GitHubRepo: !Ref ApplicationRepo
       Tags:
         - Key: module

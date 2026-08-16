@@ -3,6 +3,7 @@ parameters:
   ProjectName: ecs-cicd
   GitHubOwner: leandreAlly
   InfrastructureRepo: ecs-cicd-infrastructure
+  GitHubOwnerId: '78492995'
   CreateOidcProvider: 'true'
 tags:
   project: ecs-cicd
