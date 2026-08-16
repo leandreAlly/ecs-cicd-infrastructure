@@ -1,11 +1,10 @@
-template-file-path: cloudformation/02-ecr.yaml
+template-file-path: templates/bootstrap.yaml
 parameters:
   ProjectName: ecs-cicd
-  RepositoryName: ecs-cicd-app
   GitHubOwner: leandreAlly
-  GitHubRepo: ecs-cicd-app
+  InfrastructureRepo: ecs-cicd-infrastructure
   CreateOidcProvider: 'true'
 tags:
   project: ecs-cicd
-  layer: registry
+  layer: bootstrap
   managed-by: cloudformation-gitsync

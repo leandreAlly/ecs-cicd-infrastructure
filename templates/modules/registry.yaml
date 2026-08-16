@@ -24,20 +24,6 @@ Parameters:
     Type: String
     Default: ecs-cicd-app
 
-  RoleName:
-    Type: String
-    Default: ecs-cicd-github-ecr-push
-
-  CreateOidcProvider:
-    Type: String
-    Default: 'true'
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Description: >
-      IAM allows one OIDC provider per URL per account. Set to 'false' only if
-      another stack in this account already creates the GitHub provider.
-
   MaxImages:
     Type: Number
     Default: 10
@@ -50,26 +36,7 @@ Parameters:
     MinValue: 1
     MaxValue: 365
 
-Conditions:
-  ShouldCreateOidcProvider: !Equals [!Ref CreateOidcProvider, 'true']
-
 Resources:
-  GitHubOidcProvider:
-    Type: AWS::IAM::OIDCProvider
-    Condition: ShouldCreateOidcProvider
-    Properties:
-      Url: https://token.actions.githubusercontent.com
-      ClientIdList:
-        - sts.amazonaws.com
-      ThumbprintList:
-        - 6938fd4d98bab03faadb97b34396831e3780aea1
-        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
-      Tags:
-        - Key: Name
-          Value: github-actions-oidc
-        - Key: project
-          Value: !Ref ProjectName
-
   EcrRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -120,7 +87,6 @@ Resources:
   GitHubActionsEcrRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref RoleName
       Description: !Sub 'Lets GitHub Actions in ${GitHubOwner}/${GitHubRepo} push images to ${RepositoryName}'
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
@@ -128,10 +94,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Federated: !If
-                - ShouldCreateOidcProvider
-                - !Ref GitHubOidcProvider
-                - !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+              Federated: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
@@ -168,18 +131,10 @@ Resources:
 Outputs:
   RepositoryName:
     Value: !Ref EcrRepository
-    Export:
-      Name: !Sub '${ProjectName}-EcrRepositoryName'
   RepositoryUri:
     Value: !GetAtt EcrRepository.RepositoryUri
-    Export:
-      Name: !Sub '${ProjectName}-EcrRepositoryUri'
   RepositoryArn:
     Value: !GetAtt EcrRepository.Arn
-    Export:
-      Name: !Sub '${ProjectName}-EcrRepositoryArn'
   GitHubActionsRoleArn:
     Description: Value for the AWS_ECR_ROLE_ARN secret in the application repository
     Value: !GetAtt GitHubActionsEcrRole.Arn
-    Export:
-      Name: !Sub '${ProjectName}-GitHubActionsRoleArn'
