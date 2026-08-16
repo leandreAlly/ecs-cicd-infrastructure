@@ -51,6 +51,33 @@ Parameters:
   RepositoryName:
     Type: String
     Default: ecs-cicd-app
+  ImageTag:
+    Type: String
+    Default: ''
+    Description: "Image tag to run. Leave empty on the first deploy - the platform\
+      \ module is only created once an image exists in the registry, because an ECS\
+      \ service cannot start without a real image to pull.\n"
+  TaskCpu:
+    Type: String
+    Default: '256'
+  TaskMemory:
+    Type: String
+    Default: '512'
+  MinCapacity:
+    Type: Number
+    Default: 1
+  MaxCapacity:
+    Type: Number
+    Default: 4
+  CpuTargetUtilization:
+    Type: Number
+    Default: 60
+Conditions:
+  HasImage:
+    Fn::Not:
+    - Fn::Equals:
+      - Ref: ImageTag
+      - ''
 Resources:
   Network:
     Type: AWS::CloudFormation::Stack
@@ -100,7 +127,98 @@ Resources:
       Tags:
       - Key: module
         Value: registry
+  Platform:
+    Type: AWS::CloudFormation::Stack
+    Condition: HasImage
+    Properties:
+      TemplateURL: 
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/3fc2fa034802f8990ffa7d52305099fa.template
+      Parameters:
+        ProjectName:
+          Ref: ProjectName
+        VpcId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.VpcId
+        PublicSubnetIds:
+          Fn::GetAtt:
+          - Network
+          - Outputs.PublicSubnetIds
+        PrivateSubnetIds:
+          Fn::GetAtt:
+          - Network
+          - Outputs.PrivateSubnetIds
+        AlbSecurityGroupId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.AlbSecurityGroupId
+        TaskSecurityGroupId:
+          Fn::GetAtt:
+          - Network
+          - Outputs.TaskSecurityGroupId
+        ContainerImage:
+          Fn::Sub: ${Registry.Outputs.RepositoryUri}:${ImageTag}
+        ContainerPort:
+          Ref: ContainerPort
+        TestListenerPort:
+          Ref: TestListenerPort
+        TaskCpu:
+          Ref: TaskCpu
+        TaskMemory:
+          Ref: TaskMemory
+        MinCapacity:
+          Ref: MinCapacity
+        MaxCapacity:
+          Ref: MaxCapacity
+        CpuTargetUtilization:
+          Ref: CpuTargetUtilization
+      Tags:
+      - Key: module
+        Value: platform
 Outputs:
+  ApplicationUrl:
+    Condition: HasImage
+    Description: Public ALB endpoint - the lab deliverable
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.LoadBalancerUrl
+  ClusterName:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.ClusterName
+  ServiceName:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.ServiceName
+  BlueTargetGroupName:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.BlueTargetGroupName
+  GreenTargetGroupName:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.GreenTargetGroupName
+  ProductionListenerArn:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.ProductionListenerArn
+  TestListenerArn:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.TestListenerArn
   VpcId:
     Description: VPC created by the network module
     Value:
