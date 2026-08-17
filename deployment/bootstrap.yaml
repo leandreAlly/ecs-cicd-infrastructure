@@ -4,7 +4,7 @@ parameters:
   GitHubOwner: leandreAlly
   InfrastructureRepo: ecs-cicd-infrastructure
   GitHubOwnerId: '78492995'
-  CreateOidcProvider: 'true'
+  CreateOidcProvider: 'false'
 tags:
   project: ecs-cicd
   layer: bootstrap
