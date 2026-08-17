@@ -6,7 +6,7 @@ parameters:
   ApplicationRepo: ecs-cicd-app
   GitHubOwnerId: '78492995'
   RepositoryName: ecs-cicd-app
-  ImageTag: ''
+  ImageTag: '83aabd2'
 tags:
   project: ecs-cicd
   managed-by: cloudformation-gitsync
