@@ -175,7 +175,64 @@ Resources:
       Tags:
       - Key: module
         Value: platform
+  Delivery:
+    Type: AWS::CloudFormation::Stack
+    Condition: HasImage
+    Properties:
+      TemplateURL: 
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/67d1ae66932d808cbc45bbc92ac18cab.template
+      Parameters:
+        ProjectName:
+          Ref: ProjectName
+        EcrRepositoryName:
+          Fn::GetAtt:
+          - Registry
+          - Outputs.RepositoryName
+        ClusterName:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.ClusterName
+        ServiceName:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.ServiceName
+        ProductionListenerArn:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.ProductionListenerArn
+        TestListenerArn:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.TestListenerArn
+        BlueTargetGroupName:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.BlueTargetGroupName
+        GreenTargetGroupName:
+          Fn::GetAtt:
+          - Platform
+          - Outputs.GreenTargetGroupName
+        ApplicationRoleArn:
+          Fn::GetAtt:
+          - Registry
+          - Outputs.GitHubActionsRoleArn
+      Tags:
+      - Key: module
+        Value: delivery
 Outputs:
+  ArtifactBucketName:
+    Condition: HasImage
+    Description: Value for ARTIFACT_BUCKET in the application repository
+    Value:
+      Fn::GetAtt:
+      - Delivery
+      - Outputs.ArtifactBucketName
+  PipelineName:
+    Condition: HasImage
+    Value:
+      Fn::GetAtt:
+      - Delivery
+      - Outputs.PipelineName
   ApplicationUrl:
     Condition: HasImage
     Description: Public ALB endpoint - the lab deliverable
