@@ -147,7 +147,33 @@ Resources:
         - Key: module
           Value: platform
 
+  Delivery:
+    Type: AWS::CloudFormation::Stack
+    Condition: HasImage
+    Properties:
+      TemplateURL: modules/delivery.yaml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        EcrRepositoryName: !GetAtt Registry.Outputs.RepositoryName
+        ClusterName: !GetAtt Platform.Outputs.ClusterName
+        ServiceName: !GetAtt Platform.Outputs.ServiceName
+        ProductionListenerArn: !GetAtt Platform.Outputs.ProductionListenerArn
+        TestListenerArn: !GetAtt Platform.Outputs.TestListenerArn
+        BlueTargetGroupName: !GetAtt Platform.Outputs.BlueTargetGroupName
+        GreenTargetGroupName: !GetAtt Platform.Outputs.GreenTargetGroupName
+        ApplicationRoleArn: !GetAtt Registry.Outputs.GitHubActionsRoleArn
+      Tags:
+        - Key: module
+          Value: delivery
+
 Outputs:
+  ArtifactBucketName:
+    Condition: HasImage
+    Description: Value for ARTIFACT_BUCKET in the application repository
+    Value: !GetAtt Delivery.Outputs.ArtifactBucketName
+  PipelineName:
+    Condition: HasImage
+    Value: !GetAtt Delivery.Outputs.PipelineName
   ApplicationUrl:
     Condition: HasImage
     Description: Public ALB endpoint - the lab deliverable
