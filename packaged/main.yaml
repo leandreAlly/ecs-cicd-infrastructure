@@ -83,7 +83,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/b256ad78b7f0f164f5f05339fb411bf7.template
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/b256ad78b7f0f164f5f05339fb411bf7.template
       Parameters:
         ProjectName:
           Ref: ProjectName
@@ -112,7 +112,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/5a53a2ef5fafba960c06d91110623ced.template
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/5a53a2ef5fafba960c06d91110623ced.template
       Parameters:
         ProjectName:
           Ref: ProjectName
@@ -132,7 +132,7 @@ Resources:
     Condition: HasImage
     Properties:
       TemplateURL: 
-        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/3fc2fa034802f8990ffa7d52305099fa.template
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/3fc2fa034802f8990ffa7d52305099fa.template
       Parameters:
         ProjectName:
           Ref: ProjectName
@@ -180,7 +180,7 @@ Resources:
     Condition: HasImage
     Properties:
       TemplateURL: 
-        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-149160850943-eu-north-1/modules/67d1ae66932d808cbc45bbc92ac18cab.template
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/67d1ae66932d808cbc45bbc92ac18cab.template
       Parameters:
         ProjectName:
           Ref: ProjectName
