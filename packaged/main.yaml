@@ -233,6 +233,32 @@ Outputs:
       Fn::GetAtt:
       - Delivery
       - Outputs.PipelineName
+  TaskFamily:
+    Condition: HasImage
+    Description: Value for TASK_FAMILY in the application repository
+    Value:
+      Ref: ProjectName
+  TaskExecutionRoleArn:
+    Condition: HasImage
+    Description: Value for TASK_EXEC_ROLE_ARN in the application repository
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.TaskExecutionRoleArn
+  TaskRoleArn:
+    Condition: HasImage
+    Description: Value for TASK_ROLE_ARN in the application repository
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.TaskRoleArn
+  LogGroupName:
+    Condition: HasImage
+    Description: Value for LOG_GROUP in the application repository
+    Value:
+      Fn::GetAtt:
+      - Platform
+      - Outputs.LogGroupName
   ApplicationUrl:
     Condition: HasImage
     Description: Public ALB endpoint - the lab deliverable
