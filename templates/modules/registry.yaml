@@ -33,12 +33,6 @@ Parameters:
       immutable OIDC subject claim of the form
       repo:owner@ownerid/repo@repoid:ref:... instead of repo:owner/repo:ref:...
 
-  MaxImages:
-    Type: Number
-    Default: 10
-    MinValue: 1
-    MaxValue: 1000
-
   UntaggedImageExpiryDays:
     Type: Number
     Default: 1
@@ -68,16 +62,6 @@ Resources:
                   "countType": "sinceImagePushed",
                   "countUnit": "days",
                   "countNumber": ${UntaggedImageExpiryDays}
-                },
-                "action": { "type": "expire" }
-              },
-              {
-                "rulePriority": 2,
-                "description": "Keep only the ${MaxImages} most recent images",
-                "selection": {
-                  "tagStatus": "any",
-                  "countType": "imageCountMoreThan",
-                  "countNumber": ${MaxImages}
                 },
                 "action": { "type": "expire" }
               }
