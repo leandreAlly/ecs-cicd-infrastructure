@@ -22,11 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Lint every template
         run: |
-          set -eo pipefail
           pip install --quiet cfn-lint
           cfn-lint templates/bootstrap.yaml templates/modules/*.yaml
           cfn-lint templates/main.yaml --ignore-checks W3002
@@ -35,13 +34,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_PACKAGE_ROLE_ARN }}
-          role-session-name: gha-package-${{ github.run_id }}
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: Package the root template
         run: |
-          set -eo pipefail
-          mkdir -p packaged
           aws cloudformation package \
             --template-file templates/main.yaml \
             --s3-bucket "${{ vars.TEMPLATE_BUCKET }}" \
@@ -50,7 +46,6 @@ jobs:
 
       - name: Commit the packaged template
         run: |
-          set -eo pipefail
           git add packaged/main.yaml
 
           if git diff --cached --quiet -- packaged/main.yaml; then
