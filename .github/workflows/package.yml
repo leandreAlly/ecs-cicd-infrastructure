@@ -62,4 +62,3 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m "chore: package nested templates for ${GITHUB_SHA::7}"
           git push
-          echo "Pushed a new packaged template - GitSync will deploy it"
