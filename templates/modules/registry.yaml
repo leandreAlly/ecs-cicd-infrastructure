@@ -50,7 +50,7 @@ Resources:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Ref RepositoryName
-      ImageTagMutability: IMMUTABLE
+      ImageTagMutability: MUTABLE
       EmptyOnDelete: true
       ImageScanningConfiguration:
         ScanOnPush: true
