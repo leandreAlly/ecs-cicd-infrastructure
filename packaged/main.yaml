@@ -112,7 +112,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: 
-        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/d53941af538b1cfd6003628682337011.template
+        https://s3.eu-north-1.amazonaws.com/ecs-cicd-templates-842676015206-eu-north-1/modules/40dbc4018c71d91b0b0b9122bc3b5b1f.template
       Parameters:
         ProjectName:
           Ref: ProjectName
